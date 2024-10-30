@@ -13,13 +13,13 @@ func UriToClient(URI string) (*qdrant.Client, error) {
 	// Формат database url: qdrant://[api_key]@][netloc][:port][/?param1=value1&...]
 	//
 	// Пример
-	//  из "postgresql://user:password@localhost:5432/dbname?param1=value1",
+	//  из "qdrant://1234567890@localhost:6333?UseTLS=1",
 	//	результат: *qdrant.Client
 
 	if len(URI) < 9 {
 		return nil, errors.New("wrong uri'")
 	}
-	if URI[0:8] != "qdrant://" {
+	if URI[0:9] != "qdrant://" {
 		return nil, errors.New("wrong protocol, support only 'qdrant://'")
 	}
 	UriObj, err := url.Parse(URI)
@@ -34,9 +34,12 @@ func UriToClient(URI string) (*qdrant.Client, error) {
 		return nil, errors.New("Empty host")
 	}
 	host := UriObj.Hostname()
-	port, err := strconv.Atoi(UriObj.Port())
-	if err != nil {
-		port = 6333
+	port := 6333
+	if UriObj.Port() != "" {
+		port, err = strconv.Atoi(UriObj.Port())
+		if err != nil {
+			return nil, err
+		}
 	}
 	qs := UriObj.Query()
 	UseTLS := false

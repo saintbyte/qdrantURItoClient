@@ -1,70 +1,62 @@
 package qdrantURItoClient
 
 import (
-	"strings"
+	"errors"
 	"testing"
+
+	"github.com/qdrant/go-client/qdrant"
 )
 
-func TestUriToDSN(t *testing.T) {
-	testCases := []struct {
-		input  string
-		expect []string
-		err    bool
+func TestUriToClient(t *testing.T) {
+	tests := []struct {
+		name    string
+		uri     string
+		want    *qdrant.Client
+		wantErr error
 	}{
 		{
-			input: "postgresql://user:password@localhost:5432/dbname?param1=value1",
-			expect: []string{
-				"user=user", "password=password", "host=localhost", "port=5432", "dbname=dbname", "param1=value1",
-			},
-			err: false,
+			name:    "Valid URI",
+			uri:     "qdrant://1234567890@localhost:6333?UseTLS=1",
+			want:    &qdrant.Client{}, // You need to create a mock client for this test
+			wantErr: nil,
 		},
 		{
-			input: "postgresql://user@localhost/dbname",
-			expect: []string{
-				"user=user", "host=localhost", "dbname=dbname",
-			},
-			err: false,
+			name:    "Wrong URI",
+			uri:     "wrong://1234567890@localhost:6333?UseTLS=1",
+			want:    nil,
+			wantErr: errors.New("wrong protocol, support only 'qdrant://'"),
 		},
 		{
-			input: "postgresql://localhost:5432/dbname?param1=value1",
-			expect: []string{
-				"host=localhost", "port=5432", "dbname=dbname", "param1=value1",
-			},
-			err: false,
+			name:    "Empty Host",
+			uri:     "qdrant://1234567890@:6333?UseTLS=1",
+			want:    nil,
+			wantErr: errors.New("Empty host"),
 		},
 		{
-			input:  "postgresql://localhost/dbname",
-			expect: []string{"host=localhost", "dbname=dbname"},
-			err:    false,
-		},
-		{
-			input: "postgresql://user_111:passwordssf@qy-blue-block-65767118.eu-central-1.aws.neon.tech/neondb?sslmode=require&TimeZone=Asia%2FShanghai",
-			expect: []string{
-				"user=user_111", "password=passwordssf", "dbname=neondb",
-				"host=qy-blue-block-65767118.eu-central-1.aws.neon.tech",
-				"sslmode=require", "TimeZone=Asia/Shanghai",
-			},
-			err: false,
-		},
-		{
-			input:  "invalid-uri",
-			expect: []string{""},
-			err:    true,
+			name:    "Invalid UseTLS",
+			uri:     "qdrant://1234567890@localhost:6333?UseTLS=invalid",
+			want:    &qdrant.Client{},
+			wantErr: nil,
 		},
 	}
-
-	for _, tc := range testCases {
-		result, err := UriToDSN(tc.input)
-		if err != nil && !tc.err {
-			t.Errorf("Expected no error, but got: %v", err)
-		}
-		if err == nil && tc.err {
-			t.Errorf("Expected error, but got none")
-		}
-		for _, subStr := range tc.expect {
-			if !strings.Contains(result, subStr) {
-				t.Errorf("Expected substr %v, not found in %v, ", subStr, result)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := UriToClient(tt.uri)
+			if err != nil && tt.wantErr == nil {
+				t.Errorf("UriToClient() error = %v, wantErr %v", err, tt.wantErr)
+				return
 			}
-		}
+			if err != nil && tt.wantErr != nil && err.Error() != tt.wantErr.Error() {
+				t.Errorf("UriToClient() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if err == nil && tt.wantErr != nil {
+				t.Errorf("UriToClient() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != nil && tt.want == nil {
+				t.Errorf("UriToClient() = %v, want %v", got, tt.want)
+			}
+		})
 	}
 }

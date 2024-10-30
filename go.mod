@@ -4,7 +4,6 @@ go 1.22.2
 
 require (
 	github.com/qdrant/go-client v1.12.0
-	github.com/saintbyte/postgresURItoDSN v0.0.0-20241029003225-b0fcea1d217d
 )
 
 require (
