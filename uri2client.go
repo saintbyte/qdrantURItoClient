@@ -26,9 +26,6 @@ func UriToClient(URI string) (*qdrant.Client, error) {
 	if err != nil {
 		return nil, err
 	}
-	if UriObj.Hostname() == "" {
-		return nil, errors.New("Empty host")
-	}
 	apiKey := UriObj.User.Username()
 	if UriObj.Hostname() == "" {
 		return nil, errors.New("Empty host")
